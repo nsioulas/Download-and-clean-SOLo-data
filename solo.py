@@ -147,52 +147,6 @@ def clean_SOLO_particles(environment,year,  replace, window_size, desired_min, t
         file_to_store.close()
 
 
-
-def clean_SOLO_magnetic_field(environment, year, target_path, save_path):
-    os.environ['CDF_LIB'] = environment
-    for kk in range(len(year)):
-        target_path_final   = target_path+"\_"+str(year[kk])
-        file_names  = glob.glob(target_path_final+os.sep+'*.cdf')                           # file names
-        file_names  = natsort.natsorted(file_names)
-        for i in range(len(file_names)):
-            #""" Load magnetic field data """
-            B= pycdf.CDF(file_names[i])
-
-
-            """ Clean particle data """
-            df =pd.DataFrame({'DateTime': B['EPOCH'][:],
-                              'Br':B['B_SRF'][:].T[0],
-                              'Bt':B['B_SRF'][:].T[1],
-                              'Bn':B['B_SRF'][:].T[2]})
-            df =df.set_index('DateTime')
-            
-            f2         = df[df.Br>-1e10]
-            time       = (f2.index.to_series().diff()/np.timedelta64(1, 's'))
-            if np.sum(time[time>10])<50:
-
-                """ Create df """
-
-                if i ==0:
-                    """Resample to a cadence of 1s"""
-                    df1 = df.resample('1s').nearest().interpolate(method='linear')
-                else:
-                    """Resample to a cadence of 1s"""
-                    df = df.resample('1s').nearest().interpolate(method='linear')
-
-                df1 = pd.concat([df1,df])
-            else:
-                print('bad')
-
-        if not os.path.exists(save_path):
-            os.mkdir(save_path)
-            
-        file_to_store = open(save_path+"\_"+str(year[kk])+".dat", "wb") # sto trito bale 2 opws einai twra
-        pickle.dump(df1, file_to_store)
-        file_to_store.close()
-
-
-
-
 def clean_SOLO_magnetic_field(gap_time_threshold, resampling_time, environment, year, target_path, save_path):
     os.environ['CDF_LIB'] = environment
     for kk in range(len(year)):
